@@ -1,0 +1,12 @@
+[
+{
+  "directory": "/home/iheng/code/c/calendar/build",
+  "command": "/usr/bin/gcc -Dcale_EXPORTS -I/home/iheng/code/c/calendar/inc -g -fPIC -std=gnu11 -o CMakeFiles/cale.dir/src/calendar.c.o -c /home/iheng/code/c/calendar/src/calendar.c",
+  "file": "/home/iheng/code/c/calendar/src/calendar.c"
+},
+{
+  "directory": "/home/iheng/code/c/calendar/build",
+  "command": "/usr/bin/gcc  -I/home/iheng/code/c/calendar/inc -g -std=gnu11 -o CMakeFiles/calendar.dir/src/main.c.o -c /home/iheng/code/c/calendar/src/main.c",
+  "file": "/home/iheng/code/c/calendar/src/main.c"
+}
+]

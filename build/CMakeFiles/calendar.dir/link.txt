@@ -1,0 +1,1 @@
+/usr/bin/gcc -g CMakeFiles/calendar.dir/src/main.c.o -o ../bin/calendar  -Wl,-rpath,/home/iheng/code/c/calendar/lib: ../lib/libcale.so 

@@ -1,0 +1,1 @@
+/usr/bin/gcc -fPIC -g -shared -Wl,-soname,libcalendar_shared.so -o ../lib/libcalendar_shared.so CMakeFiles/calendar_shared.dir/src/calendar.c.o 

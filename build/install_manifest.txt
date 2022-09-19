@@ -1,0 +1,2 @@
+/home/iheng/.ms/bin/calendar
+/home/iheng/.ms/lib/libcale.so

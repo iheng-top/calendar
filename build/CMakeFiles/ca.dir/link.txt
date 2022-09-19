@@ -1,2 +1,0 @@
-/usr/bin/ar qc ../lib/libca.a CMakeFiles/ca.dir/src/calendar.c.o
-/usr/bin/ranlib ../lib/libca.a

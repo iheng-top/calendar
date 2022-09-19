@@ -1,8 +1,0 @@
-/home/iheng/code/c/calendar/build/CMakeFiles/cale.dir
-/home/iheng/code/c/calendar/build/CMakeFiles/calendar.dir
-/home/iheng/code/c/calendar/build/CMakeFiles/edit_cache.dir
-/home/iheng/code/c/calendar/build/CMakeFiles/rebuild_cache.dir
-/home/iheng/code/c/calendar/build/CMakeFiles/list_install_components.dir
-/home/iheng/code/c/calendar/build/CMakeFiles/install.dir
-/home/iheng/code/c/calendar/build/CMakeFiles/install/local.dir
-/home/iheng/code/c/calendar/build/CMakeFiles/install/strip.dir

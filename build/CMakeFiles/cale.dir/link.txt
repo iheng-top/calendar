@@ -1,1 +1,0 @@
-/usr/bin/gcc -fPIC -g -shared -Wl,-soname,libcale.so -o ../lib/libcale.so CMakeFiles/cale.dir/src/calendar.c.o 

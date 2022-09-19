@@ -6,9 +6,9 @@
 !.vscode/extensions.json
 
 # CMake
-bin/
-lib/
-build/
+bin/*
+lib/*
+build/*
 CMakeLists.txt.user
 CMakeCache.txt
 CMakeFiles

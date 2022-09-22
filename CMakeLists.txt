@@ -2,11 +2,11 @@
 cmake_minimum_required(VERSION 3.10)
 
 # 设置项目名和版本号
-project(Calendar VERSION 1.0)
+project(Calendar VERSION 1.1)
 
 # 配置文件和config.h变量替换
 set(CALENDAR_VERSION_MAJOR 1)
-set(CALENDAR_VERSION_MINOR 0)
+set(CALENDAR_VERSION_MINOR 1)
 configure_file(${PROJECT_SOURCE_DIR}/config.h.in ${PROJECT_SOURCE_DIR}/inc/config.h @ONLY) 
 
 # 指定语言标准

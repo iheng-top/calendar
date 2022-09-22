@@ -1,8 +1,22 @@
 #pragma once
+
+#include <time.h>
+
 #define TRUE 1
 #define FALSE 0
 
 typedef int BOOL;
+
+
+typedef struct SolarDateStruct {
+    int year;
+    int month;
+    int day;
+    int hour;
+    int min;
+    int sec;
+    int week;
+} SolarDate;
 
 
 typedef struct LeapMonthInfoStruct {
@@ -52,6 +66,7 @@ typedef struct JieqiInfoStruct {
 
 BOOL display_gregorian_calendar_date();
 unsigned long long get_timestamp(const int year, const int month, const int day);
+BOOL get_solar_date(const time_t *timestamp, SolarDate *solarDate);
 // 公历闰年返回TRUE，否则返回FALSE
 BOOL is_solar_leap_year(const int year);
 // 获取(leap_month, leap_month_day)
@@ -75,4 +90,5 @@ BOOL get_ganzhi_date(const int year, const int month, const int day, const int h
 BOOL get_jieqi_info(const int year, const int month, const int day, JieQiInfo *jieqiInfo);
 BOOL display_ganzhi_date(const GanZhiInfo *ganZhiInfo);
 BOOL display_jieqi_info(const JieQiInfo *jieQiInfo);
+BOOL display_solar_date(const SolarDate *solarDate);
 

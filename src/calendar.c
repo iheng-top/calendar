@@ -29,10 +29,10 @@ const char* HAN_TIANGAN[] = {"甲", "乙", "丙", "丁", "戊", "己", "庚", "�
 const char* HAN_DIZHI[] = {"子", "丑", "寅", "卯", "辰", "巳", "午", "未", "申", "酉", "戌", "亥"};
 const char* HAN_SHENGXIAO[] = {"鼠", "牛", "虎", "兔", "龙", "蛇", "马", "羊", "猴", "鸡", "狗", "猪"};
 
-// 节气在公历中每个月有两个，分别在上半月和下半月
+// 节气在公历中每个月有两个，分别在上半月和下半月，时间在公历确定的几天内浮动
 // 上半月的叫“节气”，下半月的叫“中气”
 const char* HAN_JIEQI[] = {
-	"小寒", "大寒", // 1月
+	"小寒", "大寒", // 1月节气、中气
     "立春", "雨水", // 2月
     "惊蛰", "春分", // 3月
     "清明", "谷雨", // 4月
@@ -49,9 +49,9 @@ const char* HAN_JIEQI[] = {
 const char* HAN_DUAN[] = {"夜半", "鸡鸣", "平旦", "日出", "食时", "隅中", "日中", "日昳", "晡时", "日入", "黄昏", "人定"};
 // 星座日期按照节气中的中气划分
 // 摩羯座日期为：上一年12月中气后~公历1月的中气前，
-const char* HAN_XINGZUO[] = {"摩羯座", "水瓶座", "双鱼座", "白羊座", "金牛座", "双子座", "巨蟹座", "狮子座", "处女座", "天秤座", "天蝎座", "射手座"};
+const char* HAN_XINGZUO[] = {"射手座", "摩羯座", "水瓶座", "双鱼座", "白羊座", "金牛座", "双子座", "巨蟹座", "狮子座", "处女座", "天秤座", "天蝎座"};
 // 星纪：大雪~冬至，按照节气（干支月份）划分
-const char* HAN_XINGCI[] = {"星纪", "玄枵", "娵訾", "降娄", "大梁", "实沈", "鹑首", "鹑火", "鹑尾", "寿星", "大火", "析木"};
+const char* HAN_XINGCI[] = {"玄枵", "娵訾", "降娄", "大梁", "实沈", "鹑首", "鹑火", "鹑尾", "寿星", "大火", "析木", "星纪"};
 
 
 /**
@@ -306,6 +306,34 @@ unsigned long long get_timestamp(const int year, const int month, const int day)
     // int * int -> int，结果会溢出
     return days * MILLISECOND_OF_YEAR;
 }
+
+
+BOOL get_solar_date(const time_t *timestamp, SolarDate *solarDate) {
+    struct tm *t = localtime(timestamp);
+    solarDate->year = t->tm_year + 1900;    // tm_year = Year - 1900
+    solarDate->month = t->tm_mon + 1;
+    solarDate->day = t->tm_mday;
+    solarDate->hour = t->tm_hour;
+    solarDate->min = t->tm_min;
+    solarDate->sec = t->tm_sec;
+    solarDate->week = t->tm_wday == 0 ? 7 : t->tm_wday;
+
+    return TRUE;
+}
+
+
+BOOL display_solar_date(const SolarDate *solarDate) {
+    char week[4];
+    if (solarDate->week == 7) {
+        strcpy(week, "日");
+    }
+    else {
+        strcpy(week, HAN_NUMBER[solarDate->week]);
+    }
+    printf("[公历]: %d/%d/%d 星期%s %d:%d:%d\n", solarDate->year, solarDate->month, solarDate->day, week, solarDate->hour, solarDate->min, solarDate->sec);
+    return TRUE;
+}
+
 
 // 公历闰年返回TRUE，否则返回FALSE
 BOOL is_solar_leap_year(const int year)

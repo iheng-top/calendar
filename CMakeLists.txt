@@ -18,20 +18,20 @@ set(CMAKE_C_STANDARD_REQUIRED True)
 set(CMAKE_BUILD_TYPE "Debug")
 
 # 文件输出路径
-set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
+# set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
 # 头文件包含路径
 include_directories(${PROJECT_SOURCE_DIR}/inc)
 
 # 获取某一目录下源文件列表，赋值给变量SRC_LIST
-# aux_source_directory(src SRC_LIST)
+aux_source_directory(src SRC_LIST)
 
 # 生成动态/静态库
-add_library(cale SHARED ${PROJECT_SOURCE_DIR}/src/calendar.c)
-# add_library(ca ${PROJECT_SOURCE_DIR}/src/calendar.c)
+# add_library(cale SHARED ${PROJECT_SOURCE_DIR}/src/calendar.c)
+# add_library(cale ${PROJECT_SOURCE_DIR}/src/calendar.c)
 # 生成可执行文件
-add_executable(calendar ${PROJECT_SOURCE_DIR}/src/main.c)
+add_executable(calendar ${SRC_LIST})
 
 # 链接库
 target_link_libraries(calendar cale)
@@ -39,8 +39,8 @@ target_link_libraries(calendar cale)
 
 # 安装
 # 安装目录前缀
-set(CMAKE_INSTALL_PREFIX /home/iheng/.ms)
+# set(CMAKE_INSTALL_PREFIX /home/iheng/.ms)
 # 可执行文件默认安装到bin目录，库文件默认安装到lib目录
-install(
-    TARGETS calendar cale
-)
+# install(
+#     TARGETS calendar cale
+# )

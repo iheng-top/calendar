@@ -1,8 +1,7 @@
 cmake_minimum_required(VERSION 3.0)
-project(Calendar VERSION 1.3)
+project(Calendar VERSION 0.1.3)
 
-set(CALENDAR_VERSION_MAJOR 1)
-set(CALENDAR_VERSION_MINOR 1)
+set(CALENDAR_VERSION ${CMAKE_PROJECT_VERSION})
 configure_file(${PROJECT_SOURCE_DIR}/config.h.in ${PROJECT_SOURCE_DIR}/inc/config.h @ONLY) 
 
 set(CMAKE_C_STANDARD 11)

@@ -6,7 +6,7 @@
 
 int main()
 {
-    printf("Calendar Version %d.%d\n\n", CALENDAR_VERSION_MAJOR, CALENDAR_VERSION_MINOR);
+    printf("Calendar Version %s\n\n", CALENDAR_VERSION);
     
     SolarDate solarDate;
     time_t now = time(NULL);

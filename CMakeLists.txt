@@ -1,7 +1,7 @@
 # 编译所需的cmake最低版本号
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.0)
 # 设置项目名和版本号
-project(Calendar VERSION 1.1)
+project(Calendar VERSION 1.3)
 
 # 配置文件和config.h变量替换
 set(CALENDAR_VERSION_MAJOR 1)

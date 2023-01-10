@@ -5,6 +5,8 @@
 !.vscode/launch.json
 !.vscode/extensions.json
 
+/build/
+
 # Compiled Object files
 *.slo
 *.lo

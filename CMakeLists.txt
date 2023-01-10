@@ -1,6 +1,5 @@
 # 编译所需的cmake最低版本号
 cmake_minimum_required(VERSION 3.10)
-
 # 设置项目名和版本号
 project(Calendar VERSION 1.1)
 
@@ -15,7 +14,7 @@ set(CMAKE_C_STANDARD_REQUIRED True)
 
 # 调试类型: 
 # Debug(-g) | Release(-O3 -DNDEBUG) | RelWithDebInfo(-O2 -g -DNDEBUG) | MinSizeRel(-Os -DNDEBUG)
-set(CMAKE_BUILD_TYPE "Debug")
+set(CMAKE_BUILD_TYPE "Release")
 
 # 文件输出路径
 # set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
@@ -34,13 +33,12 @@ aux_source_directory(src SRC_LIST)
 add_executable(calendar ${SRC_LIST})
 
 # 链接库
-target_link_libraries(calendar cale)
-# target_link_libraries(calendar ca)
+# target_link_libraries(calendar cale)
 
 # 安装
 # 安装目录前缀
 # set(CMAKE_INSTALL_PREFIX /home/iheng/.ms)
 # 可执行文件默认安装到bin目录，库文件默认安装到lib目录
-# install(
-#     TARGETS calendar cale
-# )
+install(
+    TARGETS calendar
+)

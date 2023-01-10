@@ -7,10 +7,11 @@
 const int START_YEAR = 1901;
 const int MONTH_DAY_BIT = 12;
 const int MONTH_NUM_BIT = 13;
-const int MILLISECOND_OF_YEAR = 86400000;
+const int MILLISECOND_OF_DAY = 86400000;
 
 extern const int MONTH_DAYS[];
 extern const char* HAN_NUMBER[];
+extern const char* HAN_KESHU[];
 extern const char* HAN_YUEFEN[];
 extern const char* HAN_RIQI[]; 
 extern const char* HAN_XINGQI[];
@@ -26,7 +27,7 @@ extern const unsigned short G_LUNAR_YEAR_DAY[];
 extern const unsigned char G_LUNAR_JIEQI[];
 
 // 获取指定年月日的时间戳
-unsigned long long get_timestamp(const int year, const int month, const int day)
+long long get_timestamp(const int year, const int month, const int day)
 {
     unsigned long long days = 0;
     for (int i = 1970; i < year; ++i) {
@@ -45,11 +46,11 @@ unsigned long long get_timestamp(const int year, const int month, const int day)
     }
     days += day - 1;
     // int * int -> int，结果会溢出
-    return days * MILLISECOND_OF_YEAR;
+    return days * MILLISECOND_OF_DAY;
 }
 
 
-BOOL get_solar_date(const time_t *timestamp, SolarDate *solarDate) {
+void get_solar_date(const time_t *timestamp, SolarDate *solarDate) {
     struct tm *t = localtime(timestamp);
     solarDate->year = t->tm_year + 1900;    // tm_year = Year - 1900
     solarDate->month = t->tm_mon + 1;
@@ -58,23 +59,7 @@ BOOL get_solar_date(const time_t *timestamp, SolarDate *solarDate) {
     solarDate->min = t->tm_min;
     solarDate->sec = t->tm_sec;
     solarDate->week = t->tm_wday == 0 ? 7 : t->tm_wday;
-
-    return TRUE;
 }
-
-
-BOOL display_solar_date(const SolarDate *solarDate) {
-    char week[4];
-    if (solarDate->week == 7) {
-        strcpy(week, "日");
-    }
-    else {
-        strcpy(week, HAN_NUMBER[solarDate->week]);
-    }
-    printf("[公历]: %d/%d/%d 星期%s %02d:%02d:%02d\n", solarDate->year, solarDate->month, solarDate->day, week, solarDate->hour, solarDate->min, solarDate->sec);
-    return TRUE;
-}
-
 
 // 公历闰年返回TRUE，否则返回FALSE
 BOOL is_solar_leap_year(const int year)
@@ -106,7 +91,7 @@ int get_lunar_month_days(const int lunar_year, const int lunar_month)
 }
 
 // 获取(lunar_year, lunar_month, lunar_day, is_leap)
-BOOL get_lunar_date(const int year, const int month, const int day, LunarDate *lunarDate)
+void get_lunar_date(const int year, const int month, const int day, LunarDate *lunarDate)
 {
     int lunar_year = year, lunar_month = 1, lunar_day = 1;
     BOOL is_leap = FALSE;
@@ -117,7 +102,7 @@ BOOL get_lunar_date(const int year, const int month, const int day, LunarDate *l
     LeapMonthInfo leapMonthInfo;
     get_leap_month_info(lunar_year, &leapMonthInfo);
 
-    int span_days = (get_timestamp(year, month, day) - get_timestamp(year, chunjie_month, chunjie_day)) / MILLISECOND_OF_YEAR;
+    int span_days = (get_timestamp(year, month, day) - get_timestamp(year, chunjie_month, chunjie_day)) / MILLISECOND_OF_DAY;
     if (span_days >= 0) {
         int month_days = get_lunar_month_days(lunar_year, lunar_month);
         while (span_days >= month_days) {
@@ -159,12 +144,11 @@ BOOL get_lunar_date(const int year, const int month, const int day, LunarDate *l
     lunarDate->lunar_xy_year = lunar_year + 2697;
     lunarDate->lunar_month = lunar_month;
     lunarDate->lunar_day = lunar_day;
-    return TRUE;
 }
 
 
 // 获取农历日期的中文表示
-BOOL convert_lunar_to_chinese(const LunarDate *lunarDate, ChineseLunarDate* chineseLunarDate)
+void convert_lunar_to_chinese(const LunarDate *lunarDate, ChineseLunarDate* chineseLunarDate)
 {
     char ad_year[5];
     char xy_year[5];
@@ -201,7 +185,7 @@ const char * _convert_to_ganzhi(const int tiangan, const int dizhi, char ganzhi[
 
 
 // 获取(干支年 月 日 时 地支时 刻数 星次:以中气分割 星座:以节气分割)
-BOOL get_ganzhi_date(const int year, const int month, const int day, const int hour, const int min, GanZhiInfo *ganZhiInfo)
+void get_ganzhi_date(const int year, const int month, const int day, const int hour, const int min, GanZhiInfo *ganZhiInfo)
 {
     // 截取year年节气日期
 	const unsigned char * data = &G_LUNAR_JIEQI[12 * (year - 1900)]; // 12 * (year - 1900 + 1)
@@ -249,9 +233,9 @@ BOOL get_ganzhi_date(const int year, const int month, const int day, const int h
 	if (is_solar_leap_year(year) && month > 2) {
 		R += 1;
 	}
-	R = R == 60 ? R : R % 60;
+	R %= 60;
 	// 以上步骤得到日柱（日天干地支的次序数：1~60，下面将起点转化为0）
-	R -= 1;
+	R = (R == 0) ? 59 : R - 1;
 	const int day_tiangan = R % 10;
 	const int day_dizhi = R % 12;
 
@@ -260,7 +244,8 @@ BOOL get_ganzhi_date(const int year, const int month, const int day, const int h
 	const int shi_dizhi = (hour + 1) / 2;
 
 	// 计算多少刻：正点过后加4刻
-	const int keshu = (hour % 2 != 0) ? min / 15 + 1 : (min / 15) + 1 + 5;
+	// const int keshu = (hour % 2 != 0) ? min / 15 + 1 : (min / 15) + 1 + 5;
+    const int keshu = min / 14.4;
 
 	// 计算星次和星座
 	const int xingcishu = (ganzhi_month == 12 ? 0 : ganzhi_month);
@@ -272,16 +257,14 @@ BOOL get_ganzhi_date(const int year, const int month, const int day, const int h
     strcpy(ganZhiInfo->month_ganzhi, _convert_to_ganzhi(month_tiangan, month_dizhi, ganzhi));
     strcpy(ganZhiInfo->day_ganzhi, _convert_to_ganzhi(day_tiangan, day_dizhi, ganzhi));
     strcpy(ganZhiInfo->shi_ganzhi, _convert_to_ganzhi(shi_tiangan, shi_dizhi, ganzhi));
-    sprintf(ganZhiInfo->shichen, "%s时", HAN_DIZHI[shi_dizhi]);
-    sprintf(ganZhiInfo->keshu, "%s刻", HAN_NUMBER[keshu]);
+    sprintf(ganZhiInfo->shichen, "%s%s", HAN_DIZHI[shi_dizhi], (hour % 2 != 0) ? "初" : "正");
+    sprintf(ganZhiInfo->keshu, "%s刻", HAN_KESHU[keshu]);
     strcpy(ganZhiInfo->xingci, HAN_XINGCI[xingcishu]);
     strcpy(ganZhiInfo->xingzuo, HAN_XINGZUO[xingzuoshu]);
-
-	return TRUE;
 }
 
 // 获取(当前节气名 持续天数 下一节气名 下一节气月 下一节气日 下一节气还有多少天)
-BOOL get_jieqi_info(const int year, const int month, const int day, JieQiInfo *jieqiInfo)
+void get_jieqi_info(const int year, const int month, const int day, JieQiInfo *jieqiInfo)
 {
     const int last_month = G_LUNAR_JIEQI[12 * (year - 1900) + month - 2];
 	const int this_month = G_LUNAR_JIEQI[12 * (year - 1900) + month - 1];
@@ -307,8 +290,8 @@ BOOL get_jieqi_info(const int year, const int month, const int day, JieQiInfo *j
 
 		jieqiInfo->next_jieqi_month = month;
 		jieqiInfo->next_jieqi_day = jieqi;
-		jieqiInfo->this_jieqi_days = (t_now - tl_zhongqi) / MILLISECOND_OF_YEAR;
-		jieqiInfo->next_jieqi_days = (t_jieqi - t_now) / MILLISECOND_OF_YEAR;
+		jieqiInfo->this_jieqi_days = (t_now - tl_zhongqi) / MILLISECOND_OF_DAY;
+		jieqiInfo->next_jieqi_days = (t_jieqi - t_now) / MILLISECOND_OF_DAY;
 	}
 	else if (day == jieqi || day < zhongqi) {
         strcpy(jieqiInfo->this_jieqi, HAN_JIEQI[(month - 1) * 2]);
@@ -316,42 +299,48 @@ BOOL get_jieqi_info(const int year, const int month, const int day, JieQiInfo *j
 
 		jieqiInfo->next_jieqi_month = month;
 		jieqiInfo->next_jieqi_day = zhongqi;
-		jieqiInfo->this_jieqi_days = (t_now - t_jieqi) / MILLISECOND_OF_YEAR;
-		jieqiInfo->next_jieqi_days = (t_zhongqi - t_now) / MILLISECOND_OF_YEAR;
+		jieqiInfo->this_jieqi_days = (t_now - t_jieqi) / MILLISECOND_OF_DAY;
+		jieqiInfo->next_jieqi_days = (t_zhongqi - t_now) / MILLISECOND_OF_DAY;
 	}
 	else {
         jieqiInfo->next_jieqi_month = month == 12 ? 1 : month + 1;
         jieqiInfo->next_jieqi_day = n_jieqi;
-		jieqiInfo->this_jieqi_days = (t_now - t_zhongqi) / MILLISECOND_OF_YEAR;
-		jieqiInfo->next_jieqi_days = (tn_jieqi - t_now) / MILLISECOND_OF_YEAR;
+		jieqiInfo->this_jieqi_days = (t_now - t_zhongqi) / MILLISECOND_OF_DAY;
+		jieqiInfo->next_jieqi_days = (tn_jieqi - t_now) / MILLISECOND_OF_DAY;
         strcpy(jieqiInfo->this_jieqi, HAN_JIEQI[(month - 1) * 2 + 1]);
         strcpy(jieqiInfo->next_jieqi, HAN_JIEQI[(jieqiInfo->next_jieqi_month - 1) * 2]);
 	}
-	return TRUE;
 }
 
-BOOL display_gregorian_date()
+void display_solar_date(const SolarDate *solarDate) {
+    char week[4];
+    if (solarDate->week == 7) {
+        strcpy(week, "日");
+    }
+    else {
+        strcpy(week, HAN_NUMBER[solarDate->week]);
+    }
+    printf("[公历]: %d/%d/%d 星期%s %02d:%02d:%02d\n", solarDate->year, solarDate->month, solarDate->day, week, solarDate->hour, solarDate->min, solarDate->sec);
+}
+
+void display_lunar_date(const ChineseLunarDate *chineseLunarDate)
 {
-    // printf("[公历]: %d/%d/%d %s %d:%d:%d\n");
-    return FALSE;
-}
-
-BOOL display_lunar_date(const ChineseLunarDate *chineseLunarDate)
-{
-    printf("[农历]: 公元%s(开元%s) %s %s\n", chineseLunarDate->c_lunar_ad_year, chineseLunarDate->c_lunar_xy_year, chineseLunarDate->c_lunar_month, chineseLunarDate->c_lunar_day);
-    return TRUE;
+    printf("[农历]: %s(开元%s) %s %s\n", chineseLunarDate->c_lunar_ad_year, chineseLunarDate->c_lunar_xy_year, chineseLunarDate->c_lunar_month, chineseLunarDate->c_lunar_day);
 }
 
 
-BOOL display_ganzhi_date(const GanZhiInfo *ganZhiInfo) 
+void display_ganzhi_date(const GanZhiInfo *ganZhiInfo) 
 {
     printf("[干支历]: %s %s %s %s\n[时辰]: %s %s\n[星次]: %s\n[星座]: %s\n", ganZhiInfo->year_ganzhi, ganZhiInfo->month_ganzhi, ganZhiInfo->day_ganzhi, ganZhiInfo->shi_ganzhi, ganZhiInfo->shichen, ganZhiInfo->keshu, ganZhiInfo->xingci, ganZhiInfo->xingzuo);
-    return TRUE;
 }
 
 
-BOOL display_jieqi_info(const JieQiInfo *jieQiInfo)
+void display_jieqi_info(const JieQiInfo *jieQiInfo)
 {
-    printf("[节气]: 距上一个节气[%s]已经过了%d天, 距离下一个节气[%s(%d月%d日)]还有%d天\n", jieQiInfo->this_jieqi, jieQiInfo->this_jieqi_days, jieQiInfo->next_jieqi, jieQiInfo->next_jieqi_month, jieQiInfo->next_jieqi_day, jieQiInfo->next_jieqi_days);
-    return TRUE;
+    if (jieQiInfo->this_jieqi_days == 0) {
+        printf("[节气]: 今天是[%s], [%s(%d月%d日)]在%d天后\n", jieQiInfo->this_jieqi, jieQiInfo->next_jieqi, jieQiInfo->next_jieqi_month, jieQiInfo->next_jieqi_day, jieQiInfo->next_jieqi_days);
+    }
+    else {
+        printf("[节气]: 今天是[%s]第%d天, [%s(%d月%d日)]在%d天后\n", jieQiInfo->this_jieqi, jieQiInfo->this_jieqi_days, jieQiInfo->next_jieqi, jieQiInfo->next_jieqi_month, jieQiInfo->next_jieqi_day, jieQiInfo->next_jieqi_days);
+    }
 }

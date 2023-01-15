@@ -258,9 +258,18 @@ void get_ganzhi_date(const int year, const int month, const int day, const int h
     strcpy(ganZhiInfo->day_ganzhi, _convert_to_ganzhi(day_tiangan, day_dizhi, ganzhi));
     strcpy(ganZhiInfo->shi_ganzhi, _convert_to_ganzhi(shi_tiangan, shi_dizhi, ganzhi));
     sprintf(ganZhiInfo->shichen, "%s%s", HAN_DIZHI[shi_dizhi], (hour % 2 != 0) ? "初" : "正");
+    strcpy(ganZhiInfo->duan, HAN_DUAN[shi_dizhi]);
     sprintf(ganZhiInfo->keshu, "%s刻", HAN_KESHU[keshu]);
     strcpy(ganZhiInfo->xingci, HAN_XINGCI[xingcishu]);
     strcpy(ganZhiInfo->xingzuo, HAN_XINGZUO[xingzuoshu]);
+
+    const int gengshu = (shi_dizhi + 2) % 12;
+    if (gengshu >= 1 && gengshu <= 5) {
+        sprintf(ganZhiInfo->geng, "%s更", HAN_NUMBER[gengshu]);
+    }
+    else {
+        ganZhiInfo->geng[0] = '\0';
+    }
 }
 
 // 获取(当前节气名 持续天数 下一节气名 下一节气月 下一节气日 下一节气还有多少天)
@@ -320,27 +329,70 @@ void display_solar_date(const SolarDate *solarDate) {
     else {
         strcpy(week, HAN_NUMBER[solarDate->week]);
     }
-    printf("[公历]: %d/%d/%d 星期%s %02d:%02d:%02d\n", solarDate->year, solarDate->month, solarDate->day, week, solarDate->hour, solarDate->min, solarDate->sec);
+    printf("[公历]: %d/%d/%d 星期%s %02d:%02d:%02d\n",
+        solarDate->year,
+        solarDate->month,
+        solarDate->day, week,
+        solarDate->hour,
+        solarDate->min,
+        solarDate->sec 
+    );
 }
 
 void display_lunar_date(const ChineseLunarDate *chineseLunarDate)
 {
-    printf("[农历]: %s(开元%s) %s %s\n", chineseLunarDate->c_lunar_ad_year, chineseLunarDate->c_lunar_xy_year, chineseLunarDate->c_lunar_month, chineseLunarDate->c_lunar_day);
+    printf("[农历]: %s(开元%s) %s %s\n",
+        chineseLunarDate->c_lunar_ad_year,
+        chineseLunarDate->c_lunar_xy_year,
+        chineseLunarDate->c_lunar_month,
+        chineseLunarDate->c_lunar_day
+    );
 }
 
 
 void display_ganzhi_date(const GanZhiInfo *ganZhiInfo) 
 {
-    printf("[干支历]: %s %s %s %s\n[时辰]: %s %s\n[星次]: %s\n[星座]: %s\n", ganZhiInfo->year_ganzhi, ganZhiInfo->month_ganzhi, ganZhiInfo->day_ganzhi, ganZhiInfo->shi_ganzhi, ganZhiInfo->shichen, ganZhiInfo->keshu, ganZhiInfo->xingci, ganZhiInfo->xingzuo);
+    printf("[干支]: %s %s %s %s\n[时辰]: %s(%s%s%s) %s\n[星次]: %s\n[星座]: %s\n",
+        ganZhiInfo->year_ganzhi,
+        ganZhiInfo->month_ganzhi,
+        ganZhiInfo->day_ganzhi,
+        ganZhiInfo->shi_ganzhi,
+        ganZhiInfo->shichen,
+        ganZhiInfo->duan,
+        (strlen(ganZhiInfo->geng) != 0) ? " " : "",
+        ganZhiInfo->geng,
+        ganZhiInfo->keshu,
+        ganZhiInfo->xingci,
+        ganZhiInfo->xingzuo
+    );
 }
 
 
 void display_jieqi_info(const JieQiInfo *jieQiInfo)
 {
     if (jieQiInfo->this_jieqi_days == 0) {
-        printf("[节气]: 今天是[%s], [%s(%d月%d日)]在%d天后\n", jieQiInfo->this_jieqi, jieQiInfo->next_jieqi, jieQiInfo->next_jieqi_month, jieQiInfo->next_jieqi_day, jieQiInfo->next_jieqi_days);
+        printf("[节气]: 今天是\033[1m%s\033[0m, \033[1m%s\033[0m在%d天后\n",
+            jieQiInfo->this_jieqi,
+            jieQiInfo->next_jieqi,
+            jieQiInfo->next_jieqi_days
+        );
     }
     else {
-        printf("[节气]: 今天是[%s]第%d天, [%s(%d月%d日)]在%d天后\n", jieQiInfo->this_jieqi, jieQiInfo->this_jieqi_days, jieQiInfo->next_jieqi, jieQiInfo->next_jieqi_month, jieQiInfo->next_jieqi_day, jieQiInfo->next_jieqi_days);
+        if (jieQiInfo->next_jieqi_days == 1 || jieQiInfo->next_jieqi_days == 2) {
+            printf("[节气]: \033[1m%s\033[0m第%d天, %s天是\033[1m%s\033[0m\n",
+                jieQiInfo->this_jieqi,
+                jieQiInfo->this_jieqi_days,
+                (jieQiInfo->next_jieqi_days == 1) ? "明" : "后",
+                jieQiInfo->next_jieqi
+            );
+        }
+        else {
+            printf("[节气]: \033[1m%s\033[0m第%d天, \033[1m%s\033[0m在%d天后\n",
+                jieQiInfo->this_jieqi,
+                jieQiInfo->this_jieqi_days,
+                jieQiInfo->next_jieqi,
+                jieQiInfo->next_jieqi_days
+            );
+        }
     }
 }

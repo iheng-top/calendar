@@ -48,7 +48,9 @@ typedef struct GanzhiInfoStruct {
     char day_ganzhi[7];
     char shi_ganzhi[7];
     char shichen[7];
+    char duan[7];
     char keshu[7];
+    char geng[7];
     char xingci[7];
     char xingzuo[10];
 } GanZhiInfo;

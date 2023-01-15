@@ -6,7 +6,6 @@ configure_file(${PROJECT_SOURCE_DIR}/config.h.in ${PROJECT_SOURCE_DIR}/inc/confi
 
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED True)
-# Debug(-g) | Release(-O3 -DNDEBUG) | RelWithDebInfo(-O2 -g -DNDEBUG) | MinSizeRel(-Os -DNDEBUG)
 set(CMAKE_BUILD_TYPE "Release")
 
 include_directories(${PROJECT_SOURCE_DIR}/inc)

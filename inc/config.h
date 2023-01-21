@@ -1,1 +1,1 @@
-#define CALENDAR_VERSION "0.1.5"
+#define CALENDAR_VERSION "0.1.7"

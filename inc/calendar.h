@@ -18,12 +18,27 @@ typedef struct SolarDateStruct {
     int week;
 } SolarDate;
 
+typedef struct ShiChenStruct {
+    int shi;
+    BOOL is_chu;
+    int duan;
+    int shike;
+    int ke;
+    int jing;
+} ShiChen;
+
+typedef struct ChineseShiChenStruct {
+    char shi[7];
+    char duan[7];
+    char shike[7];
+    char jing[7];
+    char ke[13];
+} ChineseShiChen;
 
 typedef struct LeapMonthInfoStruct {
     int lunar_month;
     int leap_month_days;
 } LeapMonthInfo;
-
 
 typedef struct LunarDateStruct {
     int lunar_ad_year;
@@ -47,10 +62,6 @@ typedef struct GanzhiInfoStruct {
     char month_ganzhi[7];
     char day_ganzhi[7];
     char shi_ganzhi[7];
-    char shichen[7];
-    char duan[7];
-    char keshu[7];
-    char geng[7];
     char xingci[7];
     char xingzuo[10];
 } GanZhiInfo;
@@ -65,9 +76,15 @@ typedef struct JieqiInfoStruct {
     int next_jieqi_days;
 } JieQiInfo;
 
+void _convert_number_to_chinese(int num, char *buf, int bs);
 
 long long get_timestamp(const int year, const int month, const int day);
 void get_solar_date(const time_t *timestamp, SolarDate *solarDate);
+
+void get_shichen(const SolarDate *solarDate, ShiChen *shiChen);
+void convert_shichen_to_chinese(const ShiChen *shiChen, ChineseShiChen *chineseShiChen);
+void display_shichen(const ChineseShiChen *chineseShiChen);
+
 // 公历闰年返回TRUE，否则返回FALSE
 BOOL is_solar_leap_year(const int year);
 // 获取(leap_month, leap_month_day)
@@ -76,7 +93,7 @@ BOOL get_leap_month_info(const int lunar_year, LeapMonthInfo *leapMonthInfo);
 int get_lunar_month_days(const int lunar_year, const int lunar_month);
 // 获取(lunar_year, lunar_month, lunar_day, is_leap)
 void get_lunar_date(const int year, const int month, const int day, LunarDate *lunarDate);
-void display_lunar_date(const ChineseLunarDate *chineseLunarDate);
+void display_lunar_date(const ChineseLunarDate *chineseLunarDate, const GanZhiInfo *ganZhiInfo);
 
 
 // 获取农历日期的中文表示

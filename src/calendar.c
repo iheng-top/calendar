@@ -9,6 +9,7 @@ const int MONTH_DAY_BIT = 12;
 const int MONTH_NUM_BIT = 13;
 const int MILLISECOND_OF_DAY = 86400000;
 
+extern const char* HAN_DANWEI[];
 extern const int MONTH_DAYS[];
 extern const char* HAN_NUMBER[];
 extern const char* HAN_KESHU[];
@@ -26,7 +27,65 @@ extern const unsigned int G_LUNAR_MONTH_DAY[];
 extern const unsigned short G_LUNAR_YEAR_DAY[];
 extern const unsigned char G_LUNAR_JIEQI[];
 
-// 获取指定年月日的时间戳
+void _convert_number_to_chinese(int num, char *buf, int size)
+{
+    int bs = 0;
+    char bytes[20];
+    if (size < 4) {
+        return;
+    }
+
+    // 0
+    if (num == 0) {
+        memcpy(buf, HAN_NUMBER[0], 4);
+    }
+    // 取出 num 的各位上的数值
+    while (num) {
+        bytes[bs++] = num % 10;
+        num /= 10;
+    }
+
+    char *pbuf = buf;
+    if (bs < 6) {
+        for (int i = bs - 1; i >= 0; --i) {
+            // 最高位是十位且最高位是1,不输出一十
+            if (bytes[i] != 0) {
+                if (!(i == bs - 1 && bs == 2 && bytes[i] == 1)) {
+                    if (pbuf - buf > size - 3) {
+                        return;
+                    }
+                    memcpy(pbuf, HAN_NUMBER[bytes[i]], 4);
+                    pbuf += 3;
+                }
+                // 输出值非0位的单位
+                if (i != 0) {
+                    if (pbuf - buf > size - 3) {
+                        return;
+                    }
+                    memcpy(pbuf, HAN_DANWEI[i], 4);
+                    pbuf += 3;
+                }
+            }
+            else {
+                // 找到第一个非零位
+                int c = i;
+                while (c >= 0 && bytes[c] == 0) {
+                    --c;
+                } 
+                if (c != -1) {
+                    if (pbuf - buf > size - 3) {
+                        return;
+                    }
+                    memcpy(pbuf, HAN_NUMBER[0], 4);
+                    pbuf += 3;
+                    i = c + 1;
+                }
+            }
+        }
+    }
+}
+
+// 获取指定年月日的时间戳(毫秒数，time得到的是秒数)
 long long get_timestamp(const int year, const int month, const int day)
 {
     unsigned long long days = 0;
@@ -50,7 +109,8 @@ long long get_timestamp(const int year, const int month, const int day)
 }
 
 
-void get_solar_date(const time_t *timestamp, SolarDate *solarDate) {
+void get_solar_date(const time_t *timestamp, SolarDate *solarDate) 
+{
     struct tm *t = localtime(timestamp);
     solarDate->year = t->tm_year + 1900;    // tm_year = Year - 1900
     solarDate->month = t->tm_mon + 1;
@@ -59,6 +119,42 @@ void get_solar_date(const time_t *timestamp, SolarDate *solarDate) {
     solarDate->min = t->tm_min;
     solarDate->sec = t->tm_sec;
     solarDate->week = t->tm_wday == 0 ? 7 : t->tm_wday;
+}
+
+void get_shichen(const SolarDate *solarDate, ShiChen *shichen) 
+{
+    shichen->shi = ((solarDate->hour + 1) / 2) % 12;
+    shichen->is_chu = (solarDate->hour % 2 != 0);
+    shichen->duan = shichen->shi;
+
+    const int secsOfHour = solarDate->min * 60 + solarDate->sec;
+    const int secsOfDay = solarDate->hour * 3600 + secsOfHour;
+    shichen->shike = secsOfHour / 864;
+    shichen->ke = secsOfDay / 864 + 1;
+
+    const int jingshu = (shichen->shi + 2) % 12;
+    if (jingshu >= 1 && jingshu <= 5) {
+        shichen->jing = jingshu;
+    }
+    else {
+        shichen->jing = 0;
+    }
+}
+
+void convert_shichen_to_chinese(const ShiChen *shiChen, ChineseShiChen *chineseShiChen)
+{
+    sprintf(chineseShiChen->shi, "%s%s", HAN_DIZHI[shiChen->shi], shiChen->is_chu ? "初" : "正");
+    strcpy(chineseShiChen->duan, HAN_DUAN[shiChen->shi]);
+    sprintf(chineseShiChen->shike, "%s刻", HAN_KESHU[shiChen->shike]);
+    if (shiChen->jing) {
+        sprintf(chineseShiChen->jing, "%s更", HAN_NUMBER[shiChen->jing]);
+    }
+    else {
+        memset(chineseShiChen->jing, 0, sizeof(chineseShiChen->jing));
+    }
+    char buf[13];
+    _convert_number_to_chinese(shiChen->ke, buf, sizeof(buf));
+    sprintf(chineseShiChen->ke, "%s", buf);
 }
 
 // 公历闰年返回TRUE，否则返回FALSE
@@ -241,11 +337,7 @@ void get_ganzhi_date(const int year, const int month, const int day, const int h
 
 	// 时天干与月天干类似，与日天干有循环对应关系
 	const int shi_tiangan = (((R % 10) % 5) * 2 + (((hour + 1) / 2))) % 10;
-	const int shi_dizhi = (hour + 1) / 2;
-
-	// 计算多少刻：正点过后加4刻
-	// const int keshu = (hour % 2 != 0) ? min / 15 + 1 : (min / 15) + 1 + 5;
-    const int keshu = min / 14.4;
+	const int shi_dizhi = ((hour + 1) / 2) % 12;
 
 	// 计算星次和星座
 	const int xingcishu = (ganzhi_month == 12 ? 0 : ganzhi_month);
@@ -257,19 +349,8 @@ void get_ganzhi_date(const int year, const int month, const int day, const int h
     strcpy(ganZhiInfo->month_ganzhi, _convert_to_ganzhi(month_tiangan, month_dizhi, ganzhi));
     strcpy(ganZhiInfo->day_ganzhi, _convert_to_ganzhi(day_tiangan, day_dizhi, ganzhi));
     strcpy(ganZhiInfo->shi_ganzhi, _convert_to_ganzhi(shi_tiangan, shi_dizhi, ganzhi));
-    sprintf(ganZhiInfo->shichen, "%s%s", HAN_DIZHI[shi_dizhi], (hour % 2 != 0) ? "初" : "正");
-    strcpy(ganZhiInfo->duan, HAN_DUAN[shi_dizhi]);
-    sprintf(ganZhiInfo->keshu, "%s刻", HAN_KESHU[keshu]);
     strcpy(ganZhiInfo->xingci, HAN_XINGCI[xingcishu]);
     strcpy(ganZhiInfo->xingzuo, HAN_XINGZUO[xingzuoshu]);
-
-    const int gengshu = (shi_dizhi + 2) % 12;
-    if (gengshu >= 1 && gengshu <= 5) {
-        sprintf(ganZhiInfo->geng, "%s更", HAN_NUMBER[gengshu]);
-    }
-    else {
-        ganZhiInfo->geng[0] = '\0';
-    }
 }
 
 // 获取(当前节气名 持续天数 下一节气名 下一节气月 下一节气日 下一节气还有多少天)
@@ -285,11 +366,11 @@ void get_jieqi_info(const int year, const int month, const int day, JieQiInfo *j
 
 	const int l_month = month == 1 ? 12 : month - 1, l_year = month == 1 ? year - 1 : year;
 	const int n_month = month == 12 ? 1 : month + 1, n_year = month == 12 ? year + 1 : year;
-	const unsigned long long t_now = get_timestamp(year, month, day);
-	const unsigned long long tl_zhongqi = get_timestamp(l_year, l_month, l_zhongqi);
-	const unsigned long long t_jieqi = get_timestamp(year, month, jieqi);
-	const unsigned long long t_zhongqi = get_timestamp(year, month, zhongqi);
-	const unsigned long long tn_jieqi = get_timestamp(n_year, n_month, n_jieqi);
+	const long long t_now = get_timestamp(year, month, day);
+	const long long tl_zhongqi = get_timestamp(l_year, l_month, l_zhongqi);
+	const long long t_jieqi = get_timestamp(year, month, jieqi);
+	const long long t_zhongqi = get_timestamp(year, month, zhongqi);
+	const long long tn_jieqi = get_timestamp(n_year, n_month, n_jieqi);
 	
 	// 上月中气(l_year, l_month, l_zhongqi) 本月节气(year, month, jieqi) 本月中气(year, month, zhingqi) 下月节气(n_year, n_month, n_jieqi)
 	if (day < jieqi) {
@@ -339,11 +420,23 @@ void display_solar_date(const SolarDate *solarDate) {
     );
 }
 
-void display_lunar_date(const ChineseLunarDate *chineseLunarDate)
+void display_shichen(const ChineseShiChen *chineseShiChen)
 {
-    printf("[农历]: %s(开元%s) %s %s\n",
-        chineseLunarDate->c_lunar_ad_year,
+    printf("[时辰]: %s(%s%s%s) %s\n",
+        chineseShiChen->shi,
+        chineseShiChen->duan,
+        (strlen(chineseShiChen->jing) != 0) ? " " : "",
+        chineseShiChen->jing,
+        chineseShiChen->shike
+    );
+    printf("[刻制]: %s/一百\n", chineseShiChen->ke);
+}
+
+void display_lunar_date(const ChineseLunarDate *chineseLunarDate, const GanZhiInfo *ganZhiInfo)
+{
+    printf("[农历]: 开元%s %s年 %s %s\n",
         chineseLunarDate->c_lunar_xy_year,
+        ganZhiInfo->year_ganzhi,
         chineseLunarDate->c_lunar_month,
         chineseLunarDate->c_lunar_day
     );
@@ -352,19 +445,14 @@ void display_lunar_date(const ChineseLunarDate *chineseLunarDate)
 
 void display_ganzhi_date(const GanZhiInfo *ganZhiInfo) 
 {
-    printf("[干支]: %s %s %s %s\n[时辰]: %s(%s%s%s) %s\n[星次]: %s\n[星座]: %s\n",
+    printf("[干支]: %s %s %s %s\n",
         ganZhiInfo->year_ganzhi,
         ganZhiInfo->month_ganzhi,
         ganZhiInfo->day_ganzhi,
-        ganZhiInfo->shi_ganzhi,
-        ganZhiInfo->shichen,
-        ganZhiInfo->duan,
-        (strlen(ganZhiInfo->geng) != 0) ? " " : "",
-        ganZhiInfo->geng,
-        ganZhiInfo->keshu,
-        ganZhiInfo->xingci,
-        ganZhiInfo->xingzuo
+        ganZhiInfo->shi_ganzhi
     );
+    printf("[星次]: %s\n", ganZhiInfo->xingci);
+    printf("[星座]: %s\n", ganZhiInfo->xingzuo);
 }
 
 

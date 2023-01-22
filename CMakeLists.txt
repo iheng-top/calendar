@@ -10,7 +10,13 @@ set(CMAKE_BUILD_TYPE "Release")
 
 include_directories(${PROJECT_SOURCE_DIR}/inc)
 aux_source_directory(src SRC_LIST)
-add_executable(calendar ${SRC_LIST})
+add_executable(calendar 
+    ${SRC_LIST}
+)
 install(
     TARGETS calendar
+)
+install(
+    DIRECTORY ${PROJECT_SOURCE_DIR}/source
+    DESTINATION "/usr/local/share/calendar"
 )

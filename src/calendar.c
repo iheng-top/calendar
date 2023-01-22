@@ -1,4 +1,5 @@
 #include "calendar.h"
+#include "csvutils.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -7,7 +8,7 @@
 const int START_YEAR = 1901;
 const int MONTH_DAY_BIT = 12;
 const int MONTH_NUM_BIT = 13;
-const int MILLISECOND_OF_DAY = 86400000;
+const int SECOND_OF_DAY = 86400;
 
 extern const char* HAN_DANWEI[];
 extern const int MONTH_DAYS[];
@@ -105,7 +106,7 @@ long long get_timestamp(const int year, const int month, const int day)
     }
     days += day - 1;
     // int * int -> int，结果会溢出
-    return days * MILLISECOND_OF_DAY;
+    return days * SECOND_OF_DAY;
 }
 
 
@@ -198,7 +199,7 @@ void get_lunar_date(const int year, const int month, const int day, LunarDate *l
     LeapMonthInfo leapMonthInfo;
     get_leap_month_info(lunar_year, &leapMonthInfo);
 
-    int span_days = (get_timestamp(year, month, day) - get_timestamp(year, chunjie_month, chunjie_day)) / MILLISECOND_OF_DAY;
+    int span_days = (get_timestamp(year, month, day) - get_timestamp(year, chunjie_month, chunjie_day)) / SECOND_OF_DAY;
     if (span_days >= 0) {
         int month_days = get_lunar_month_days(lunar_year, lunar_month);
         while (span_days >= month_days) {
@@ -246,19 +247,19 @@ void get_lunar_date(const int year, const int month, const int day, LunarDate *l
 // 获取农历日期的中文表示
 void convert_lunar_to_chinese(const LunarDate *lunarDate, ChineseLunarDate* chineseLunarDate)
 {
-    char ad_year[5];
     char xy_year[5];
-    sprintf(ad_year, "%d", lunarDate->lunar_ad_year);
     sprintf(xy_year, "%d", lunarDate->lunar_xy_year);
     int i;
-    for (i = 0; i < strlen(ad_year); ++i) {
-        strcpy(chineseLunarDate->c_lunar_ad_year + 3 * i, HAN_NUMBER[ad_year[i] - '0']);
-    }
-    strcpy(chineseLunarDate->c_lunar_ad_year + 3 * i, "年");
     for (i = 0; i < strlen(xy_year); ++i) {
         strcpy(chineseLunarDate->c_lunar_xy_year + 3 * i, HAN_NUMBER[xy_year[i] - '0']);
     }
     strcpy(chineseLunarDate->c_lunar_xy_year + 3 * i, "年");
+
+    int ad_year = lunarDate->lunar_ad_year;
+    const int year_tiangan = (ad_year - 3) % 10 - 1;
+	const int year_dizhi = (ad_year - 3) % 12 - 1;
+    char ganzhi[7];
+    strcpy(chineseLunarDate->c_lunar_year, _convert_to_ganzhi(year_tiangan, year_dizhi, ganzhi));
 
     if (lunarDate->is_leap) {
         strcpy(chineseLunarDate->c_lunar_month, "闰");
@@ -380,8 +381,8 @@ void get_jieqi_info(const int year, const int month, const int day, JieQiInfo *j
 
 		jieqiInfo->next_jieqi_month = month;
 		jieqiInfo->next_jieqi_day = jieqi;
-		jieqiInfo->this_jieqi_days = (t_now - tl_zhongqi) / MILLISECOND_OF_DAY;
-		jieqiInfo->next_jieqi_days = (t_jieqi - t_now) / MILLISECOND_OF_DAY;
+		jieqiInfo->this_jieqi_days = (t_now - tl_zhongqi) / SECOND_OF_DAY + 1;
+		jieqiInfo->next_jieqi_days = (t_jieqi - t_now) / SECOND_OF_DAY;
 	}
 	else if (day == jieqi || day < zhongqi) {
         strcpy(jieqiInfo->this_jieqi, HAN_JIEQI[(month - 1) * 2]);
@@ -389,14 +390,14 @@ void get_jieqi_info(const int year, const int month, const int day, JieQiInfo *j
 
 		jieqiInfo->next_jieqi_month = month;
 		jieqiInfo->next_jieqi_day = zhongqi;
-		jieqiInfo->this_jieqi_days = (t_now - t_jieqi) / MILLISECOND_OF_DAY;
-		jieqiInfo->next_jieqi_days = (t_zhongqi - t_now) / MILLISECOND_OF_DAY;
+		jieqiInfo->this_jieqi_days = (t_now - t_jieqi) / SECOND_OF_DAY + 1;
+		jieqiInfo->next_jieqi_days = (t_zhongqi - t_now) / SECOND_OF_DAY;
 	}
 	else {
         jieqiInfo->next_jieqi_month = month == 12 ? 1 : month + 1;
         jieqiInfo->next_jieqi_day = n_jieqi;
-		jieqiInfo->this_jieqi_days = (t_now - t_zhongqi) / MILLISECOND_OF_DAY;
-		jieqiInfo->next_jieqi_days = (tn_jieqi - t_now) / MILLISECOND_OF_DAY;
+		jieqiInfo->this_jieqi_days = (t_now - t_zhongqi) / SECOND_OF_DAY + 1;
+		jieqiInfo->next_jieqi_days = (tn_jieqi - t_now) / SECOND_OF_DAY;
         strcpy(jieqiInfo->this_jieqi, HAN_JIEQI[(month - 1) * 2 + 1]);
         strcpy(jieqiInfo->next_jieqi, HAN_JIEQI[(jieqiInfo->next_jieqi_month - 1) * 2]);
 	}
@@ -432,11 +433,11 @@ void display_shichen(const ChineseShiChen *chineseShiChen)
     printf("[刻制]: %s/一百\n", chineseShiChen->ke);
 }
 
-void display_lunar_date(const ChineseLunarDate *chineseLunarDate, const GanZhiInfo *ganZhiInfo)
+void display_lunar_date(const ChineseLunarDate *chineseLunarDate)
 {
     printf("[农历]: 开元%s %s年 %s %s\n",
         chineseLunarDate->c_lunar_xy_year,
-        ganZhiInfo->year_ganzhi,
+        chineseLunarDate->c_lunar_year,
         chineseLunarDate->c_lunar_month,
         chineseLunarDate->c_lunar_day
     );
@@ -458,7 +459,7 @@ void display_ganzhi_date(const GanZhiInfo *ganZhiInfo)
 
 void display_jieqi_info(const JieQiInfo *jieQiInfo)
 {
-    if (jieQiInfo->this_jieqi_days == 0) {
+    if (jieQiInfo->this_jieqi_days == 1) {
         printf("[节气]: 今天是\033[1m%s\033[0m, \033[1m%s\033[0m在%d天后\n",
             jieQiInfo->this_jieqi,
             jieQiInfo->next_jieqi,
@@ -483,4 +484,103 @@ void display_jieqi_info(const JieQiInfo *jieQiInfo)
             );
         }
     }
+}
+
+static void parse_solar_date(int year, char *date, int *month, int *day)
+{
+    *month = 0;
+    *day = 0;
+    int pos = 0;
+    while (date[pos] && date[pos] != '/') {
+        ++pos;
+    }
+    *month = atoi(date);
+    if (date[pos + 1] == 'w') { // 1日 三
+        SolarDate solarDate;
+        time_t now = get_timestamp(year, *month, 1) - 8 * 3600;
+        get_solar_date(&now, &solarDate);
+        if (solarDate.week <= 4) {
+            *day = (4 - solarDate.week + 21 + 1);
+        }
+        else {
+            *day = (4 + 7 - solarDate.week) + 21 + 1;
+        }
+    }
+    else {
+        *day = atoi(date + pos + 1);
+    }
+}
+
+static void parse_lunar_date(int year, char *date, int *month, int *day)
+{
+    // char *pos = strstr(date, "月");
+    // printf("%s\n", pos);
+    *month = 0;
+    *day = 0;
+    for (size_t i = 0; i < 12; ++i)
+    {
+        char *pos = strstr(date, HAN_YUEFEN[i]);
+        if (pos) {
+            *month = i + 1;
+            break;
+        }
+    }
+    for (size_t i = 0; i < 30; ++i)
+    {
+        char *pos = strstr(date, HAN_RIQI[i]);
+        if (pos) {
+            *day = i + 1;
+            break;
+        }
+    }
+    char *pos = strstr(date, "晦日");
+    if (pos) {
+        *day = get_lunar_month_days(year, *month);
+    }
+}
+
+void display_solar_festival(const SolarDate *solarDate)
+{
+    FILE *sfp = fopen("/usr/local/share/calendar/source/solar_festival.csv", "r");
+    if (!sfp) {
+        return;
+    }
+    char table[200][2][64];
+    int lines, fields;
+    csv_read((char ***)table, 20, 2, 64, &lines, &fields, sfp);
+    
+    for (size_t i = 0; i < lines; ++i)
+    {
+        int month, day;
+        parse_solar_date(solarDate->year, table[i][1], &month, &day);
+        if (solarDate->month == month && solarDate->day == day) {
+            printf("[节日]: %s\n", table[i][0]);
+            break;
+        }
+    }
+
+    fclose(sfp);
+}
+
+void display_lunar_festival(const LunarDate *lunarDate)
+{
+    FILE *lfp = fopen("/usr/local/share/calendar/source/lunar_festival.csv", "r");
+    if (!lfp) {
+        return;
+    }
+
+    char table[200][2][64];
+    int lines, fields;
+
+    csv_read((char ***)table, 20, 2, 64, &lines, &fields, lfp);
+    for (size_t i = 0; i < lines; ++i) {
+        int month = 0, day = 0;
+        parse_lunar_date(lunarDate->lunar_ad_year, table[i][1], &month, &day);
+        if (!lunarDate->is_leap && lunarDate->lunar_month == month && lunarDate->lunar_day == day) {
+            printf("[节日]: %s\n", table[i][0]);
+            break;
+        }
+    }
+
+    fclose(lfp);
 }

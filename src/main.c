@@ -10,6 +10,7 @@ int main()
     
     SolarDate solarDate;
     time_t now = time(NULL);
+    // time_t now = get_timestamp(2023, 1, 21) - 8 * 3600;
     get_solar_date(&now, &solarDate);
 
     LunarDate lunarDate;
@@ -29,8 +30,10 @@ int main()
     get_jieqi_info(solarDate.year, solarDate.month, solarDate.day, &jieQiInfo);
 
     display_solar_date(&solarDate);
-    display_lunar_date(&chineseLunarDate, &ganZhiInfo);
+    display_lunar_date(&chineseLunarDate);
     display_shichen(&chineseShiChen);
     display_ganzhi_date(&ganZhiInfo);
     display_jieqi_info(&jieQiInfo);
+    display_solar_festival(&solarDate);
+    display_lunar_festival(&lunarDate);
 }

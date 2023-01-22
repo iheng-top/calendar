@@ -50,7 +50,7 @@ typedef struct LunarDateStruct {
 
 
 typedef struct ChineseLunarDateStruct {
-    char c_lunar_ad_year[16];
+    char c_lunar_year[7];
     char c_lunar_xy_year[16];
     char c_lunar_month[10];
     char c_lunar_day[7];
@@ -93,7 +93,7 @@ BOOL get_leap_month_info(const int lunar_year, LeapMonthInfo *leapMonthInfo);
 int get_lunar_month_days(const int lunar_year, const int lunar_month);
 // 获取(lunar_year, lunar_month, lunar_day, is_leap)
 void get_lunar_date(const int year, const int month, const int day, LunarDate *lunarDate);
-void display_lunar_date(const ChineseLunarDate *chineseLunarDate, const GanZhiInfo *ganZhiInfo);
+void display_lunar_date(const ChineseLunarDate *chineseLunarDate);
 
 
 // 获取农历日期的中文表示
@@ -109,4 +109,7 @@ void get_jieqi_info(const int year, const int month, const int day, JieQiInfo *j
 void display_ganzhi_date(const GanZhiInfo *ganZhiInfo);
 void display_jieqi_info(const JieQiInfo *jieQiInfo);
 void display_solar_date(const SolarDate *solarDate);
+
+void display_solar_festival(const SolarDate *solarDate);
+void display_lunar_festival(const LunarDate *lunarDate);
 

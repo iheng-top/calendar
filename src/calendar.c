@@ -496,14 +496,16 @@ static void parse_solar_date(int year, char *date, int *month, int *day)
     }
     *month = atoi(date);
     if (date[pos + 1] == 'w') { // 1日 三
+        int n = date[pos + 2] - '0';
+        int w = date[pos + 3] - '0';
         SolarDate solarDate;
         time_t now = get_timestamp(year, *month, 1) - 8 * 3600;
         get_solar_date(&now, &solarDate);
-        if (solarDate.week <= 4) {
-            *day = (4 - solarDate.week + 21 + 1);
+        if (solarDate.week <= w) {
+            *day = (w - solarDate.week + 7 * (n - 1) + 1);
         }
         else {
-            *day = (4 + 7 - solarDate.week) + 21 + 1;
+            *day = (w + 7 - solarDate.week) + 7 * (n - 1) + 1;
         }
     }
     else {

@@ -10,7 +10,7 @@ int main()
     
     SolarDate solarDate;
     time_t now = time(NULL);
-    // time_t now = get_timestamp(2023, 1, 21) - 8 * 3600;
+    // time_t now = get_timestamp(2024, 11, 28) - 8 * 3600;
     get_solar_date(&now, &solarDate);
 
     LunarDate lunarDate;

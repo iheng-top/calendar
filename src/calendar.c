@@ -9,36 +9,39 @@ const int START_YEAR = 1901;
 const int MONTH_DAY_BIT = 12;
 const int MONTH_NUM_BIT = 13;
 const int SECOND_OF_DAY = 86400;
+const int HAN_LEN = strlen("字");
 
-extern const char* HAN_DANWEI[];
+extern const char *HAN_DANWEI[];
 extern const int MONTH_DAYS[];
-extern const char* HAN_NUMBER[];
-extern const char* HAN_KESHU[];
-extern const char* HAN_YUEFEN[];
-extern const char* HAN_RIQI[]; 
-extern const char* HAN_XINGQI[];
-extern const char* HAN_TIANGAN[];
-extern const char* HAN_DIZHI[];
-extern const char* HAN_SHENGXIAO[];
-extern const char* HAN_JIEQI[];
-extern const char* HAN_DUAN[];
-extern const char* HAN_XINGZUO[];
-extern const char* HAN_XINGCI[];
+extern const char *HAN_NUMBER[];
+extern const char *HAN_KESHU[];
+extern const char *HAN_YUEFEN[];
+extern const char *HAN_RIQI[]; 
+extern const char *HAN_XINGQI[];
+extern const char *HAN_TIANGAN[];
+extern const char *HAN_DIZHI[];
+extern const char *HAN_SHENGXIAO[];
+extern const char *HAN_JIEQI[];
+extern const char *HAN_DUAN[];
+extern const char *HAN_XINGZUO[];
+extern const char *HAN_XINGCI[];
 extern const unsigned int G_LUNAR_MONTH_DAY[];
 extern const unsigned short G_LUNAR_YEAR_DAY[];
 extern const unsigned char G_LUNAR_JIEQI[];
+extern const char LUNAR_FESTIVAL[17][2][64];
+extern const char SOLAR_FESTIVAL[20][2][64];
 
 void _convert_number_to_chinese(int num, char *buf, int size)
 {
     int bs = 0;
     char bytes[20];
-    if (size < 4) {
+    if (size < HAN_LEN + 1) {
         return;
     }
 
     // 0
     if (num == 0) {
-        memcpy(buf, HAN_NUMBER[0], 4);
+        memcpy(buf, HAN_NUMBER[0], HAN_LEN + 1);
     }
     // 取出 num 的各位上的数值
     while (num) {
@@ -47,24 +50,25 @@ void _convert_number_to_chinese(int num, char *buf, int size)
     }
 
     char *pbuf = buf;
+    // 只实现了10万以内的转换
     if (bs < 6) {
         for (int i = bs - 1; i >= 0; --i) {
             // 最高位是十位且最高位是1,不输出一十
             if (bytes[i] != 0) {
                 if (!(i == bs - 1 && bs == 2 && bytes[i] == 1)) {
-                    if (pbuf - buf > size - 3) {
+                    if (pbuf - buf > size - HAN_LEN) {
                         return;
                     }
-                    memcpy(pbuf, HAN_NUMBER[bytes[i]], 4);
-                    pbuf += 3;
+                    memcpy(pbuf, HAN_NUMBER[bytes[i]], HAN_LEN + 1);
+                    pbuf += HAN_LEN;
                 }
                 // 输出值非0位的单位
                 if (i != 0) {
-                    if (pbuf - buf > size - 3) {
+                    if (pbuf - buf > size - HAN_LEN) {
                         return;
                     }
-                    memcpy(pbuf, HAN_DANWEI[i], 4);
-                    pbuf += 3;
+                    memcpy(pbuf, HAN_DANWEI[i], HAN_LEN + 1);
+                    pbuf += HAN_LEN;
                 }
             }
             else {
@@ -74,11 +78,11 @@ void _convert_number_to_chinese(int num, char *buf, int size)
                     --c;
                 } 
                 if (c != -1) {
-                    if (pbuf - buf > size - 3) {
+                    if (pbuf - buf > size - HAN_LEN) {
                         return;
                     }
-                    memcpy(pbuf, HAN_NUMBER[0], 4);
-                    pbuf += 3;
+                    memcpy(pbuf, HAN_NUMBER[0], HAN_LEN + 1);
+                    pbuf += HAN_LEN;
                     i = c + 1;
                 }
             }
@@ -251,9 +255,9 @@ void convert_lunar_to_chinese(const LunarDate *lunarDate, ChineseLunarDate* chin
     sprintf(xy_year, "%d", lunarDate->lunar_xy_year);
     int i;
     for (i = 0; i < strlen(xy_year); ++i) {
-        strcpy(chineseLunarDate->c_lunar_xy_year + 3 * i, HAN_NUMBER[xy_year[i] - '0']);
+        strcpy(chineseLunarDate->c_lunar_xy_year + HAN_LEN * i, HAN_NUMBER[xy_year[i] - '0']);
     }
-    strcpy(chineseLunarDate->c_lunar_xy_year + 3 * i, "年");
+    strcpy(chineseLunarDate->c_lunar_xy_year + HAN_LEN * i, "年");
 
     int ad_year = lunarDate->lunar_ad_year;
     const int year_tiangan = (ad_year - 3) % 10 - 1;
@@ -263,7 +267,7 @@ void convert_lunar_to_chinese(const LunarDate *lunarDate, ChineseLunarDate* chin
 
     if (lunarDate->is_leap) {
         strcpy(chineseLunarDate->c_lunar_month, "闰");
-        strcpy(chineseLunarDate->c_lunar_month + 3, HAN_YUEFEN[lunarDate->lunar_day - 1]);
+        strcpy(chineseLunarDate->c_lunar_month + HAN_LEN, HAN_YUEFEN[lunarDate->lunar_day - 1]);
     }
     else {
         strcpy(chineseLunarDate->c_lunar_month, HAN_YUEFEN[lunarDate->lunar_month - 1]);
@@ -543,46 +547,60 @@ static void parse_lunar_date(int year, char *date, int *month, int *day)
 
 void display_solar_festival(const SolarDate *solarDate)
 {
-    FILE *sfp = fopen("/usr/local/share/calendar/source/solar_festival.csv", "r");
-    if (!sfp) {
-        return;
-    }
-    char table[200][2][64];
+    FILE *sfp = NULL;
+#ifdef __linux 
+    sfp = fopen("/usr/local/share/cnow/source/solar_festival.csv", "r");
+#endif
+    char ***pt;
     int lines, fields;
-    csv_read((char ***)table, 20, 2, 64, &lines, &fields, sfp);
-    
-    for (size_t i = 0; i < lines; ++i)
-    {
+    if (sfp) {
+        char table[200][2][64];
+        csv_read((char ***)table, 20, 2, 64, &lines, &fields, sfp);
+        fclose(sfp);
+        pt = (char ***)table;
+    }
+    else {
+        fields = 2;
+        lines = sizeof(SOLAR_FESTIVAL) / 64 / fields;
+        pt = (char ***)SOLAR_FESTIVAL;
+    }
+
+    for (size_t i = 0; i < lines; ++i) {
         int month, day;
-        parse_solar_date(solarDate->year, table[i][1], &month, &day);
+        parse_solar_date(solarDate->year, get_table_element(pt, lines, fields, 64, i, 1), &month, &day);
         if (solarDate->month == month && solarDate->day == day) {
-            printf("[节日]: %s\n", table[i][0]);
+            printf("[节日]: %s\n", get_table_element(pt, lines, fields, 64, i, 0));
             break;
         }
     }
-
-    fclose(sfp);
 }
 
 void display_lunar_festival(const LunarDate *lunarDate)
 {
-    FILE *lfp = fopen("/usr/local/share/calendar/source/lunar_festival.csv", "r");
-    if (!lfp) {
-        return;
+    FILE *lfp = NULL;
+#ifdef __linux
+    lfp = fopen("/usr/local/share/cnow/source/lunar_festival.csv", "r");
+#endif
+    int lines, fields;
+    char ***pt;
+    if (lfp) {
+        char table[200][2][64];
+        csv_read((char ***)table, 20, 2, 64, &lines, &fields, lfp);
+        fclose(lfp);
+        pt = (char ***)table;
+    }
+    else {
+        fields = 2;
+        lines = sizeof(LUNAR_FESTIVAL) / 64 / fields;
+        pt = (char ***)LUNAR_FESTIVAL;
     }
 
-    char table[200][2][64];
-    int lines, fields;
-
-    csv_read((char ***)table, 20, 2, 64, &lines, &fields, lfp);
     for (size_t i = 0; i < lines; ++i) {
         int month = 0, day = 0;
-        parse_lunar_date(lunarDate->lunar_ad_year, table[i][1], &month, &day);
+        parse_lunar_date(lunarDate->lunar_ad_year, get_table_element(pt, lines, fields, 64, i, 1), &month, &day);
         if (!lunarDate->is_leap && lunarDate->lunar_month == month && lunarDate->lunar_day == day) {
-            printf("[节日]: %s\n", table[i][0]);
+            printf("[节日]: %s\n", get_table_element(pt, lines, fields, 64, i, 0));
             break;
         }
     }
-
-    fclose(lfp);
 }

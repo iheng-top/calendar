@@ -6,11 +6,11 @@
 
 int main()
 {
-    printf("Calendar Version %s\n\n", CALENDAR_VERSION);
+    printf("cnow version %s\n\n", CNOW_VERSION);
     
     SolarDate solarDate;
     time_t now = time(NULL);
-    // time_t now = get_timestamp(2024, 11, 28) - 8 * 3600;
+    // time_t now = get_timestamp(2023, 2, 5) - 8 * 3600;
     get_solar_date(&now, &solarDate);
 
     LunarDate lunarDate;
